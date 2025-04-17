@@ -1,0 +1,76 @@
+#include <LiquidCrystal_I2C.h>
+#include <Wire.h>
+#include <SoftwareSerial.h>
+
+
+const int buttonA = 2;
+const int buttonB = 3;
+const int buttonC = 4;
+const int buttonNOTA = 5;
+const int buzzerPin = 8;
+
+// Setup I2C LCD - Change address to 0x27 or 0x3F based on your module
+LiquidCrystal_I2C lcd(0x27, 16, 2);
+
+SoftwareSerial nodemcuSerial(10, 11); // RX (unused), TX (Pin 10)
+
+
+void setup() {
+  Serial.begin(9600);
+  nodemcuSerial.begin(9600);
+
+
+  // Button Pins
+  pinMode(buttonA, INPUT_PULLUP);
+  pinMode(buttonB, INPUT_PULLUP);
+  pinMode(buttonC, INPUT_PULLUP);
+  pinMode(buttonNOTA, INPUT_PULLUP);
+
+  // Buzzer
+  pinMode(buzzerPin, OUTPUT);
+
+  // LCD Init
+  lcd.init();
+  lcd.backlight();
+  lcd.setCursor(0, 0);
+  lcd.print("  Voting Ready  ");
+}
+
+void loop() {
+  if (digitalRead(buttonA) == LOW) {
+    castVote("Candidate A");
+  }
+  else if (digitalRead(buttonB) == LOW) {
+    castVote("Candidate B");
+  }
+  else if (digitalRead(buttonC) == LOW) {
+    castVote("Candidate C");
+  }
+  else if (digitalRead(buttonNOTA) == LOW) {
+    castVote("NOTA");
+  }
+  nodemcuSerial.println(candidate); // Send to NodeMCU
+
+}
+
+void castVote(String candidate) {
+  // Buzzer feedback
+  digitalWrite(buzzerPin, HIGH);
+  delay(200);
+  digitalWrite(buzzerPin, LOW);
+
+  // Display on LCD
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("You voted for:");
+  lcd.setCursor(0, 1);
+  lcd.print(candidate);
+
+  // Send to Python
+  Serial.println(candidate);
+
+  delay(2000); // Delay to avoid multiple votes
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("  Voting Ready  ");
+}
